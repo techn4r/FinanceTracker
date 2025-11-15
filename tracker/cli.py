@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from .models import Transaction
 from .storage import Storage
+from .reports import compute_summary,print_summary
 
 
 def parse_date_or_today(date_str: Optional[str]) -> date:
@@ -24,7 +25,6 @@ def print_transactions(transactions: List[Transaction]) -> None:
         print("Транзакций не найдено.")
         return
 
-    # простой формат вывода
     print(f"{'ID':<4} {'Дата':<10} {'Тип':<8} {'Сумма':>10}  {'Категория':<15} Описание")
     print("-" * 70)
     for tx in transactions:
@@ -47,7 +47,6 @@ def main() -> None:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # --- add ---
     add_parser = subparsers.add_parser("add", help="Добавить транзакцию")
     add_parser.add_argument(
         "kind",
@@ -78,7 +77,6 @@ def main() -> None:
         help="Описание / комментарий к транзакции",
     )
 
-    # --- list ---
     list_parser = subparsers.add_parser("list", help="Показать транзакции")
     list_parser.add_argument(
         "--from",
@@ -96,8 +94,19 @@ def main() -> None:
         help="Фильтр по категории",
     )
 
-    args = parser.parse_args()
+    summary_parser = subparsers.add_parser("summary", help="Сводка по доходам/расходам")
+    summary_parser.add_argument(
+        "--from",
+        dest="from_date",
+        help="Начальная дата (YYYY-MM-DD)",
+    )
+    summary_parser.add_argument(
+        "--to",
+        dest="to_date",
+        help="Конечная дата (YYYY-MM-DD)",
+    )
 
+    args = parser.parse_args()
     storage = Storage(Path(args.db))
 
     if args.command == "add":
@@ -131,3 +140,14 @@ def main() -> None:
             category=args.category,
         )
         print_transactions(transactions)
+
+    elif args.command == "summary":
+        from_date = parse_date_or_none(args.from_date)
+        to_date = parse_date_or_none(args.to_date)
+        transactions = storage.list_transactions(
+            from_date=from_date,
+            to_date=to_date,
+            category=None,
+        )
+        summary = compute_summary(transactions)
+        print_summary(summary)
