@@ -1,0 +1,25 @@
+{% extends "finance/base.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h1 class="h4 mb-4">Удаление транзакции</h1>
+
+      <p>Вы действительно хотите удалить транзакцию от {{ transaction.date }}
+        на сумму {{ transaction.amount }} ({{ transaction.category.name }})?</p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'finance:transaction_list' %}"
+             class="btn btn-outline-secondary">
+            Отмена
+          </a>
+          <button type="submit" class="btn btn-danger">
+            Удалить
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

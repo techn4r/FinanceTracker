@@ -3,96 +3,55 @@
 {% block content %}
   <div class="row justify-content-center">
     <div class="col-md-6">
-      <h1 class="h4 mb-4">Новая транзакция</h1>
+      <h1 class="h4 mb-4">{{ title }}</h1>
 
       <form method="post">
         {% csrf_token %}
 
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
         <div class="mb-3">
-          <label for="date" class="form-label">Дата</label>
-          <input
-            type="date"
-            class="form-control"
-            id="date"
-            name="date"
-            value="{{ request.POST.date|default:'' }}"
-          >
+          <label class="form-label" for="id_date">Дата</label>
+          {{ form.date }}
+          {% for error in form.date.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
 
         <div class="mb-3">
-          <label for="amount" class="form-label">Сумма</label>
-          <input
-            type="number"
-            step="0.01"
-            class="form-control"
-            id="amount"
-            name="amount"
-            required
-            value="{{ request.POST.amount|default:'' }}"
-          >
+          <label class="form-label" for="id_amount">Сумма</label>
+          {{ form.amount }}
+          {% for error in form.amount.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
 
         <div class="mb-3">
-          <label for="kind" class="form-label">Тип</label>
-          <select
-            class="form-select"
-            id="kind"
-            name="kind"
-            required
-          >
-            <option value="expense"
-              {% if request.POST.kind == "expense" or not request.POST.kind %}
-                selected
-              {% endif %}
-            >
-              Расход
-            </option>
-            <option value="income"
-              {% if request.POST.kind == "income" %}
-                selected
-              {% endif %}
-            >
-              Доход
-            </option>
-          </select>
+          <label class="form-label" for="id_kind">Тип</label>
+          {{ form.kind }}
+          {% for error in form.kind.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
 
         <div class="mb-3">
-          <label for="category" class="form-label">Категория</label>
-          <select
-            class="form-select"
-            id="category"
-            name="category"
-            required
-          >
-            <option value="" disabled
-              {% if not request.POST.category %}
-                selected
-              {% endif %}
-            >
-              Выберите категорию
-            </option>
-            {% for cat in categories %}
-              <option value="{{ cat.id }}"
-                {% if request.POST.category == cat.id|stringformat:"s" %}
-                  selected
-                {% endif %}
-              >
-                {{ cat.name }}
-                {% if cat.is_income %}(доход){% else %}(расход){% endif %}
-              </option>
-            {% endfor %}
-          </select>
+          <label class="form-label" for="id_category">Категория</label>
+          {{ form.category }}
+          {% for error in form.category.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
 
         <div class="mb-3">
-          <label for="description" class="form-label">Комментарий</label>
-          <textarea
-            class="form-control"
-            id="description"
-            name="description"
-            rows="3"
-          >{{ request.POST.description|default:'' }}</textarea>
+          <label class="form-label" for="id_description">Комментарий</label>
+          {{ form.description }}
+          {% for error in form.description.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
         </div>
 
         <div class="d-flex justify-content-between">

@@ -1,10 +1,16 @@
 {% extends "finance/base.html" %}
+
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3">Транзакции</h1>
-    <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
-      + Добавить
-    </a>
+    <div>
+      <a href="{% url 'finance:category_list' %}" class="btn btn-outline-secondary me-2">
+        Категории
+      </a>
+      <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
+        + Добавить
+      </a>
+    </div>
   </div>
 
   <p>
@@ -21,6 +27,7 @@
         <th>Категория</th>
         <th>Сумма</th>
         <th>Комментарий</th>
+        <th class="text-end">Действия</th>
       </tr>
     </thead>
     <tbody>
@@ -31,10 +38,20 @@
           <td>{{ tx.category.name }}</td>
           <td>{{ tx.amount }}</td>
           <td>{{ tx.description }}</td>
+          <td class="text-end">
+            <a href="{% url 'finance:transaction_edit' tx.id %}"
+               class="btn btn-sm btn-outline-secondary">
+              Изменить
+            </a>
+            <a href="{% url 'finance:transaction_delete' tx.id %}"
+               class="btn btn-sm btn-outline-danger">
+              Удалить
+            </a>
+          </td>
         </tr>
       {% empty %}
         <tr>
-          <td colspan="5">Транзакций пока нет</td>
+          <td colspan="6">Транзакций пока нет</td>
         </tr>
       {% endfor %}
     </tbody>
