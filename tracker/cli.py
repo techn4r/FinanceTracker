@@ -5,7 +5,7 @@ from typing import Optional, List
 
 from .models import Transaction
 from .storage import Storage
-from .reports import compute_summary,print_summary
+from .reports import compute_summary, print_summary
 
 
 def parse_date_or_today(date_str: Optional[str]) -> date:
@@ -25,33 +25,39 @@ def print_transactions(transactions: List[Transaction]) -> None:
         print("Транзакций не найдено.")
         return
 
-    print(f"{'ID':<4} {'Дата':<10} {'Тип':<8} {'Сумма':>10}  {'Категория':<15} Описание")
-    print("-" * 70)
+    print("ID  | Дата       | Тип     | Категория       | Сумма      | Комментарий")
+    print("-" * 80)
     for tx in transactions:
+        kind_label = "Доход" if tx.kind == "income" else "Расход"
         print(
-            f"{tx.id:<4} {tx.date.isoformat():<10} {tx.kind:<8} "
-            f"{tx.amount:>10.2f}  {tx.category:<15} {tx.description}"
+            f"{tx.id:>3} | {tx.date.isoformat()} | "
+            f"{kind_label:<7} | {tx.category:<14} | "
+            f"{tx.amount:10.2f} | {tx.description}"
         )
 
 
-def main() -> None:
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="fintracker",
-        description="Простой трекер личных финансов (CLI).",
+        description="Простой консольный трекер личных финансов"
     )
     parser.add_argument(
         "--db",
-        default="finances.db",
-        help="Путь к файлу базы данных (по умолчанию finances.db)",
+        dest="db_path",
+        type=Path,
+        default=Path("finance.db"),
+        help="Путь к файлу базы данных (по умолчанию ./finance.db)",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    add_parser = subparsers.add_parser("add", help="Добавить транзакцию")
+    # add
+    add_parser = subparsers.add_parser(
+        "add", help="Добавить доход или расход"
+    )
     add_parser.add_argument(
         "kind",
         choices=["income", "expense"],
-        help="Тип: income (доход) или expense (расход)",
+        help="Тип транзакции: income — доход, expense — расход",
     )
     add_parser.add_argument(
         "amount",
@@ -69,24 +75,26 @@ def main() -> None:
         help="Дата в формате YYYY-MM-DD (по умолчанию сегодня)",
     )
     add_parser.add_argument(
-        "-m",
-        "--message",
-        "--description",
-        dest="description",
+        "-c",
+        "--comment",
+        dest="comment",
         default="",
-        help="Описание / комментарий к транзакции",
+        help="Комментарий к транзакции",
     )
 
-    list_parser = subparsers.add_parser("list", help="Показать транзакции")
+    # list
+    list_parser = subparsers.add_parser(
+        "list", help="Показать список транзакций"
+    )
     list_parser.add_argument(
         "--from",
         dest="from_date",
-        help="Начальная дата (YYYY-MM-DD)",
+        help="Дата начала периода YYYY-MM-DD",
     )
     list_parser.add_argument(
         "--to",
         dest="to_date",
-        help="Конечная дата (YYYY-MM-DD)",
+        help="Дата конца периода YYYY-MM-DD",
     )
     list_parser.add_argument(
         "--category",
@@ -94,42 +102,42 @@ def main() -> None:
         help="Фильтр по категории",
     )
 
-    summary_parser = subparsers.add_parser("summary", help="Сводка по доходам/расходам")
+    # summary
+    summary_parser = subparsers.add_parser(
+        "summary", help="Показать сводку по доходам и расходам"
+    )
     summary_parser.add_argument(
         "--from",
         dest="from_date",
-        help="Начальная дата (YYYY-MM-DD)",
+        help="Дата начала периода YYYY-MM-DD",
     )
     summary_parser.add_argument(
         "--to",
         dest="to_date",
-        help="Конечная дата (YYYY-MM-DD)",
+        help="Дата конца периода YYYY-MM-DD",
     )
 
-    args = parser.parse_args()
-    storage = Storage(Path(args.db))
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> None:
+    parser = create_parser()
+    args = parser.parse_args(argv)
+
+    storage = Storage(args.db_path)
 
     if args.command == "add":
-        tx_date = parse_date_or_today(args.date_str)
-        created_at = datetime.utcnow()
-
-        if args.amount <= 0:
-            raise SystemExit("Сумма должна быть положительной.")
-
         tx = Transaction(
             id=None,
-            date=tx_date,
+            date=parse_date_or_today(args.date_str),
             amount=args.amount,
             kind=args.kind,
             category=args.category,
-            description=args.description.strip(),
-            created_at=created_at,
+            description=args.comment or "",
+            created_at=datetime.now(),
         )
         saved = storage.add_transaction(tx)
-        print(
-            f"Добавлена транзакция #{saved.id}: "
-            f"{saved.date} {saved.kind} {saved.amount:.2f} {saved.category}"
-        )
+        print(f"Добавлена транзакция #{saved.id}")
 
     elif args.command == "list":
         from_date = parse_date_or_none(args.from_date)
